@@ -12,6 +12,7 @@ import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from './config/wagmi';
 import { ConnectWallet } from './components/ConnectWallet';
+import { SaveScoreOnchain } from './components/SaveScoreOnchain';
 
 const queryClient = new QueryClient();
 
@@ -141,6 +142,12 @@ export default function App() {
                   className="h-full bg-red-500 transition-all duration-300"
                   style={{ width: `${(gameState.bossHp / gameState.bossMaxHp) * 100}%` }}
                 />
+              </div>
+            )}
+
+            {gameState?.status === 'gameOver' && (
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-[100px]">
+                <SaveScoreOnchain score={gameState.score} />
               </div>
             )}
           </div>
