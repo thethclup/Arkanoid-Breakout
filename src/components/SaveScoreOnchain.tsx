@@ -3,79 +3,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain, useReadContract } from 'wagmi';
+import React from 'react';
+import { useAccount, useSendTransaction, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
-
-const ARKANOID_GM_ADDRESS = "0xdcF8ce99ce60f7db96f0cdDc4DC329e13D6D6694" as const;
-
-const arkanoidGMABI = [
-  {
-    "inputs": [],
-    "name": "DailyLimitReached",
-    "type": "error"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
-      { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" },
-      { "indexed": false, "internalType": "uint256", "name": "dailyCount", "type": "uint256" }
-    ],
-    "name": "GMRecorded",
-    "type": "event"
-  },
-  {
-    "inputs": [],
-    "name": "DAILY_LIMIT",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      { "internalType": "address", "name": "_user", "type": "address" }
-    ],
-    "name": "getTodayGMCount",
-    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "sendGM",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
-] as const;
+import { toHex } from 'viem';
 
 export function SaveScoreOnchain({ score }: { score: number }) {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain, isPending: isSwitching } = useSwitchChain();
-  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
+  const { data: hash, isPending, sendTransaction, error } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
-
-  // Mevcut GM limitini oku
-  const { data: todayCountData, refetch } = useReadContract({
-    address: ARKANOID_GM_ADDRESS,
-    abi: arkanoidGMABI,
-    functionName: 'getTodayGMCount',
-    args: [address as `0x${string}`],
-    query: {
-      enabled: !!address,
-    }
-  });
-
-  const todayCount = todayCountData ? Number(todayCountData) : 0;
-  const isLimitReached = todayCount >= 5;
-
-  useEffect(() => {
-    if (isSuccess) {
-      refetch(); // Başarılı olunca sayaç güncellensin
-    }
-  }, [isSuccess, refetch]);
 
   if (!isConnected || !address) return null;
 
@@ -87,28 +25,26 @@ export function SaveScoreOnchain({ score }: { score: number }) {
       return;
     }
 
-    if (isLimitReached) return;
-
-    writeContract({
-      address: ARKANOID_GM_ADDRESS,
-      abi: arkanoidGMABI,
-      functionName: 'sendGM',
-      chainId: base.id,
+    const scoreHex = toHex(`SCORE:${score}`);
+    const builderCodeSuffix = "07626173656170700080218021802180218021802180218021";
+    const finalData = `${scoreHex}${builderCodeSuffix}` as `0x${string}`;
+    
+    sendTransaction({ 
+      to: '0x000000000000000000000000000000000000dEaD', // Smart wallet'ların revert etmesini engellemek için Burn Adresine gönderiyoruz
+      value: 0n, 
+      data: finalData, 
+      chainId: chainId 
     });
   };
-
-  // Custom error parse
-  const errorMessage = writeError?.message || '';
-  const isCustomLimitError = errorMessage.includes('DailyLimitReached') || errorMessage.includes('UserRejectedRequestError');
 
   return (
     <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'10px' }}>
       <button
         onClick={(e) => { e.stopPropagation(); handleSave(); }}
-        disabled={isPending || isConfirming || isSuccess || isSwitching || (isSupportedChain && isLimitReached)}
+        disabled={isPending || isConfirming || isSuccess || isSwitching}
         style={{
           padding: '12px 28px',
-          background: isPending || isConfirming || isSuccess || isSwitching || isLimitReached
+          background: isPending || isConfirming || isSuccess || isSwitching
             ? 'rgba(50,50,80,0.8)'
             : 'linear-gradient(135deg, #0055ff, #00ccff)',
           border: '1px solid rgba(0,200,255,0.5)',
@@ -118,32 +54,29 @@ export function SaveScoreOnchain({ score }: { score: number }) {
           fontSize: '13px',
           fontWeight: '800',
           letterSpacing: '1px',
-          cursor: isPending || isConfirming || isSuccess || isSwitching || isLimitReached ? 'not-allowed' : 'pointer',
+          cursor: isPending || isConfirming || isSuccess || isSwitching ? 'not-allowed' : 'pointer',
           boxShadow: '0 0 20px rgba(0,150,255,0.4)',
           textTransform: 'uppercase',
           transition: 'all 0.2s',
-          opacity: isPending || isConfirming || isSwitching || isLimitReached ? 0.7 : 1,
+          opacity: isPending || isConfirming || isSwitching ? 0.7 : 1,
         }}
       >
         {!isSupportedChain ? (isSwitching ? 'Ağ Değiştiriliyor...' : 'Base Ağına Geç (Switch Network)') 
-          : isLimitReached && !isSuccess ? '❌ Daily Limit Reached (5/5)'
           : isPending ? '⏳ Confirm in Wallet…'
-          : isConfirming ? '⛓ Recording GM…'
-          : isSuccess ? '✅ GM Recorded On-Chain!'
-          : `🕹️ Send GM (${todayCount}/5)`}
+          : isConfirming ? '⛓ Recording on Base…'
+          : isSuccess ? '✅ Score Saved On-Chain!'
+          : '💾 Save Score On-Chain'}
       </button>
 
-      {writeError && (
-        <div style={{ fontSize: '11px', color: '#ff4444', textTransform: 'uppercase', fontFamily: "monospace", maxWidth: '300px', textAlign: 'center' }}>
-          {errorMessage.includes('DailyLimitReached') ? 'Bugünlük 5 adet GM limitinizi doldurdunuz!' : 
-           errorMessage.includes('UserRejectedRequestError') || errorMessage.includes('rejected') ? 'İşlemi reddettiniz.' :
-           'İşlem Başarısız (Tx Failed)'}
+      {error && (
+        <div style={{ fontSize: '11px', color: '#ff4444', textTransform: 'uppercase', fontFamily: "monospace" }}>
+          {error.message.includes('chain') ? 'Ağ hatası (Chain mismatch).' : 'İşlem Başarısız (Tx Failed)'}
         </div>
       )}
 
       {hash && (
         <a
-          href={`https://basescan.org/tx/${hash}`}
+          href={`https://${chainId === baseSepolia.id ? 'sepolia.' : ''}basescan.org/tx/${hash}`}
           target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}

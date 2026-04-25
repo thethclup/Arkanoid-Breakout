@@ -4,88 +4,97 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
 import { base } from 'wagmi/chains';
-import { encodeFunctionData, parseAbi } from 'viem';
 
-// ── Contract address – deploy via Remix first, then paste here ──────────────
-const GM_CONTRACT_ADDRESS = '0x1900dcC773fAc61Ef92170B1d46F70a36ed70a4b' as `0x${string}`;
-// ─────────────────────────────────────────────────────────────────────────────
+const GM_CONTRACT_ADDRESS = '0xdcF8ce99ce60f7db96f0cdDc4DC329e13D6D6694' as const;
 
-const GM_ABI = parseAbi([
-  'function gm() external',
-]);
+const arkanoidGMABI = [
+  {
+    "inputs": [],
+    "name": "DailyLimitReached",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "internalType": "address", "name": "user", "type": "address" },
+      { "indexed": false, "internalType": "uint256", "name": "timestamp", "type": "uint256" },
+      { "indexed": false, "internalType": "uint256", "name": "dailyCount", "type": "uint256" }
+    ],
+    "name": "GMRecorded",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "DAILY_LIMIT",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_user", "type": "address" }
+    ],
+    "name": "getTodayGMCount",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "sendGM",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+] as const;
 
 const DAILY_LIMIT = 5;
-const STORAGE_KEY = 'gm_chain_daily';
-
-interface DailyData {
-  date: string;
-  count: number;
-  txHashes: string[];
-}
-
-function getTodayStr() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function getDailyData(): DailyData {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { date: getTodayStr(), count: 0, txHashes: [] };
-    const parsed = JSON.parse(raw);
-    if (parsed.date !== getTodayStr()) return { date: getTodayStr(), count: 0, txHashes: [] };
-    return parsed;
-  } catch {
-    return { date: getTodayStr(), count: 0, txHashes: [] };
-  }
-}
-
-function saveDailyData(data: DailyData) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-}
 
 export function GMChain() {
   const { address, isConnected } = useAccount();
-  const [dailyData, setDailyData] = useState<DailyData>(getDailyData());
+  const [txHashes, setTxHashes] = useState<string[]>([]);
   const [showTxList, setShowTxList] = useState(false);
 
-  const { data: hash, isPending, sendTransaction, error } = useSendTransaction();
+  const { writeContract, data: hash, isPending, error: writeError } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  // Mevcut GM limitini oku
+  const { data: todayCountData, refetch } = useReadContract({
+    address: GM_CONTRACT_ADDRESS,
+    abi: arkanoidGMABI,
+    functionName: 'getTodayGMCount',
+    args: address ? [address] : undefined,
+    chainId: base.id,
+    query: {
+      enabled: !!address,
+    }
+  });
+
+  const todayCount = todayCountData ? Number(todayCountData) : 0;
+  const remaining = Math.max(0, DAILY_LIMIT - todayCount);
+  const exhausted = remaining <= 0;
 
   // Refresh daily data when success
   useEffect(() => {
     if (isSuccess && hash) {
-      const fresh = getDailyData();
-      const updated: DailyData = {
-        date: getTodayStr(),
-        count: fresh.count + 1,
-        txHashes: [...fresh.txHashes, hash],
-      };
-      saveDailyData(updated);
-      setDailyData(updated);
+      if (!txHashes.includes(hash)) {
+        setTxHashes(prev => [...prev, hash]);
+      }
+      refetch();
     }
-  }, [isSuccess, hash]);
-
-  // Also refresh on mount
-  useEffect(() => {
-    setDailyData(getDailyData());
-  }, []);
+  }, [isSuccess, hash, refetch, txHashes]);
 
   if (!isConnected || !address) return null;
-
-  const remaining = DAILY_LIMIT - dailyData.count;
-  const exhausted = remaining <= 0;
 
   const handleGM = () => {
     if (exhausted || isPending || isConfirming) return;
 
-    const calldata = encodeFunctionData({ abi: GM_ABI, functionName: 'gm' });
-
-    sendTransaction({
-      to: GM_CONTRACT_ADDRESS,
-      data: calldata,
-      value: 0n,
+    writeContract({
+      address: GM_CONTRACT_ADDRESS,
+      abi: arkanoidGMABI,
+      functionName: 'sendGM',
       chainId: base.id,
     });
   };
@@ -94,12 +103,15 @@ export function GMChain() {
   const pillColors = ['#ff4444', '#ff8800', '#ffcc00', '#88ff00', '#00ff88', '#00ffcc'];
   const pillColor = pillColors[Math.min(remaining, pillColors.length - 1)];
 
+  // Custom error parse
+  const errorMessage = writeError?.message || '';
+
   return (
     <div className="gm-chain-wrapper">
       <div className="gm-header">
         <span className="gm-label">☀️ GM CHAIN</span>
         <span className="gm-counter" style={{ color: pillColor }}>
-          {dailyData.count}/{DAILY_LIMIT} today
+          {todayCount}/{DAILY_LIMIT} today
         </span>
       </div>
 
@@ -110,8 +122,8 @@ export function GMChain() {
             key={i}
             className="gm-dot"
             style={{
-              background: i < dailyData.count ? '#00ffcc' : 'rgba(255,255,255,0.15)',
-              boxShadow: i < dailyData.count ? '0 0 6px #00ffcc' : 'none',
+              background: i < todayCount ? '#00ffcc' : 'rgba(255,255,255,0.15)',
+              boxShadow: i < todayCount ? '0 0 6px #00ffcc' : 'none',
             }}
           />
         ))}
@@ -126,28 +138,30 @@ export function GMChain() {
           ? '⏳ Waiting wallet…'
           : isConfirming
           ? '⛓ Confirming…'
-          : isSuccess && remaining === DAILY_LIMIT - dailyData.count
+          : isSuccess && !exhausted
           ? '✅ GM sent!'
-          : exhausted
+          : exhausted && !isSuccess
           ? '🌙 Come back tomorrow'
           : `👋 Send GM (${remaining} left)`}
       </button>
 
-      {error && (
-        <p className="gm-error">
-          ❌ {(error as any)?.shortMessage || error.message}
-        </p>
+      {writeError && (
+        <div style={{ fontSize: '10px', color: '#ff4444', marginTop: '4px' }}>
+          {errorMessage.includes('DailyLimitReached') ? 'Bugünlük 5 adet GM limitinizi doldurdunuz!' : 
+           errorMessage.includes('UserRejectedRequestError') || errorMessage.includes('rejected') ? '❌ İşlemi reddettiniz.' :
+           '❌ İşlem Başarısız (Tx Failed)'}
+        </div>
       )}
 
-      {dailyData.txHashes.length > 0 && (
+      {txHashes.length > 0 && (
         <button className="gm-history-toggle" onClick={() => setShowTxList(v => !v)}>
-          {showTxList ? '▲ Hide' : '▼ Show'} tx history ({dailyData.txHashes.length})
+          {showTxList ? '▲ Hide' : '▼ Show'} tx history ({txHashes.length})
         </button>
       )}
 
       {showTxList && (
         <div className="gm-tx-list">
-          {dailyData.txHashes.map((h, i) => (
+          {txHashes.map((h, i) => (
             <a
               key={i}
               href={`https://basescan.org/tx/${h}`}
@@ -228,11 +242,6 @@ export function GMChain() {
           opacity: 0.7;
           cursor: wait;
         }
-        .gm-error {
-          font-size: 10px;
-          color: #ff4444;
-          margin: 0;
-        }
         .gm-history-toggle {
           background: none;
           border: none;
@@ -242,6 +251,7 @@ export function GMChain() {
           font-family: monospace;
           padding: 0;
           text-align: left;
+          margin-top: 4px;
         }
         .gm-history-toggle:hover { color: #00ffcc; }
         .gm-tx-list {
