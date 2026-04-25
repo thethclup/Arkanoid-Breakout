@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract, useChainId, useSwitchChain } from 'wagmi';
 import { base } from 'wagmi/chains';
 
 const GM_CONTRACT_ADDRESS = '0xdcF8ce99ce60f7db96f0cdDc4DC329e13D6D6694' as const;
@@ -54,6 +54,8 @@ const DAILY_LIMIT = 5;
 
 export function GMChain() {
   const { address, isConnected } = useAccount();
+  const chainId = useChainId();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
   const [txHashes, setTxHashes] = useState<string[]>([]);
   const [showTxList, setShowTxList] = useState(false);
 
@@ -89,6 +91,11 @@ export function GMChain() {
   if (!isConnected || !address) return null;
 
   const handleGM = () => {
+    if (chainId !== base.id) {
+      switchChain?.({ chainId: base.id });
+      return;
+    }
+
     if (exhausted || isPending || isConfirming) return;
 
     writeContract({
@@ -105,6 +112,7 @@ export function GMChain() {
 
   // Custom error parse
   const errorMessage = writeError?.message || '';
+  const needsSwitch = chainId !== base.id;
 
   return (
     <div className="gm-chain-wrapper">
@@ -130,11 +138,13 @@ export function GMChain() {
       </div>
 
       <button
-        className={`gm-button ${exhausted ? 'gm-exhausted' : ''} ${isPending || isConfirming ? 'gm-loading' : ''}`}
+        className={`gm-button ${exhausted && !needsSwitch ? 'gm-exhausted' : ''} ${(isPending || isConfirming || isSwitching) ? 'gm-loading' : ''}`}
         onClick={handleGM}
-        disabled={exhausted || isPending || isConfirming}
+        disabled={(exhausted && !needsSwitch) || isPending || isConfirming || isSwitching}
       >
-        {isPending
+        {needsSwitch 
+          ? (isSwitching ? 'Ağ Değiştiriliyor...' : 'Base Ağına Geç (Switch)')
+          : isPending
           ? '⏳ Waiting wallet…'
           : isConfirming
           ? '⛓ Confirming…'
@@ -146,10 +156,10 @@ export function GMChain() {
       </button>
 
       {writeError && (
-        <div style={{ fontSize: '10px', color: '#ff4444', marginTop: '4px' }}>
+        <div style={{ fontSize: '10px', color: '#ff4444', marginTop: '4px', wordBreak: 'break-word', lineHeight: '1.2' }}>
           {errorMessage.includes('DailyLimitReached') ? 'Bugünlük 5 adet GM limitinizi doldurdunuz!' : 
            errorMessage.includes('UserRejectedRequestError') || errorMessage.includes('rejected') ? '❌ İşlemi reddettiniz.' :
-           '❌ İşlem Başarısız (Tx Failed)'}
+           `❌ İşlem Başarısız: ${errorMessage.split('\n')[0].substring(0, 50)}...`}
         </div>
       )}
 

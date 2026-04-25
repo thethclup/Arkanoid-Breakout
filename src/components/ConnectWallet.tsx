@@ -4,11 +4,13 @@
  */
 
 import React, { useEffect } from 'react';
-import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi';
+import { useAccount, useConnect, useDisconnect, useEnsName, useSwitchChain, useChainId } from 'wagmi';
 import { base } from 'wagmi/chains';
 
 export function ConnectWallet({ onNameChange }: { onNameChange: (name: string) => void }) {
   const { address, isConnected, isConnecting } = useAccount();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const { connect, connectors } = useConnect();
   const { disconnect } = useDisconnect();
 
@@ -17,20 +19,27 @@ export function ConnectWallet({ onNameChange }: { onNameChange: (name: string) =
     chainId: base.id,
   });
 
+  // Otomatik ağ geçişi
   useEffect(() => {
-    if (isConnected && address) {
+    if (isConnected && chainId !== base.id && switchChain) {
+      switchChain({ chainId: base.id });
+    }
+  }, [isConnected, chainId, switchChain]);
+
+  useEffect(() => {
+    if (isConnected && address && chainId === base.id) {
       onNameChange(basename || `${address.slice(0, 6)}…${address.slice(-4)}`);
-    } else {
+    } else if (!isConnected) {
       onNameChange('Anonymous');
     }
-  }, [isConnected, address, basename, onNameChange]);
+  }, [isConnected, address, basename, chainId, onNameChange]);
 
   if (isConnected) {
     const displayName = basename || (address ? `${address.slice(0, 6)}…${address.slice(-4)}` : 'Connected');
     return (
       <div className="wallet-connected">
         <span className="wallet-indicator" />
-        <span className="wallet-name">{displayName}</span>
+        <span className="wallet-name">{displayName} {chainId !== base.id ? '(Wrong Network)' : ''}</span>
         <button onClick={() => disconnect()} className="wallet-disconnect">✕</button>
         <style>{`
           .wallet-connected { display:flex; align-items:center; gap:8px; padding:6px 14px; background:rgba(0,255,136,0.08); border:1px solid rgba(0,255,136,0.3); border-radius:20px; font-family:'Courier New',monospace; }
@@ -49,7 +58,7 @@ export function ConnectWallet({ onNameChange }: { onNameChange: (name: string) =
       {connectors.map((connector) => (
         <button
           key={connector.uid}
-          onClick={() => connect({ connector })}
+          onClick={() => connect({ connector, chainId: base.id })}
           disabled={isConnecting}
           style={{
             padding: '6px 14px',
