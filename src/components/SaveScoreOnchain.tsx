@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { base, baseSepolia } from 'wagmi/chains';
 import { toHex } from 'viem';
@@ -14,6 +14,22 @@ export function SaveScoreOnchain({ score }: { score: number }) {
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const { data: hash, isPending, sendTransaction, error } = useSendTransaction();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+  const notifiedHash = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isSuccess && hash && address && notifiedHash.current !== hash) {
+      notifiedHash.current = hash;
+      fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          wallet_address: address,
+          title: "Score Saved! 🏆",
+          message: `Your high score of ${score} has been saved on Base!`
+        })
+      }).catch(err => console.error("Notification error:", err));
+    }
+  }, [isSuccess, hash, address, score]);
 
   if (!isConnected || !address) return null;
 

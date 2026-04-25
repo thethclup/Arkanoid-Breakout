@@ -78,6 +78,8 @@ export function GMChain() {
   const remaining = Math.max(0, DAILY_LIMIT - todayCount);
   const exhausted = remaining <= 0;
 
+  const notifiedHashes = React.useRef(new Set<string>());
+
   // Refresh daily data when success
   useEffect(() => {
     if (isSuccess && hash) {
@@ -85,8 +87,21 @@ export function GMChain() {
         setTxHashes(prev => [...prev, hash]);
       }
       refetch();
+
+      if (!notifiedHashes.current.has(hash)) {
+        notifiedHashes.current.add(hash);
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            wallet_address: address,
+            title: "GM Sent! ☀️",
+            message: `You've sent your GM on Base! (${todayCount + 1}/${DAILY_LIMIT} today)`
+          })
+        }).catch(err => console.error("Notification error:", err));
+      }
     }
-  }, [isSuccess, hash, refetch, txHashes]);
+  }, [isSuccess, hash, refetch, txHashes, address, todayCount]);
 
   if (!isConnected || !address) return null;
 
@@ -102,7 +117,8 @@ export function GMChain() {
       address: GM_CONTRACT_ADDRESS,
       abi: arkanoidGMABI,
       functionName: 'sendGM',
-      chainId: base.id,
+      account: address as `0x${string}`,
+      chain: base,
     });
   };
 
