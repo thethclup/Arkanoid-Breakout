@@ -1,3 +1,8 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React from 'react';
 import { useAccount, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi';
 import { base } from 'wagmi/chains';
@@ -11,49 +16,51 @@ export function SaveScoreOnchain({ score }: { score: number }) {
   if (!isConnected || !address) return null;
 
   const handleSave = () => {
-    // Skoru hex formatına çeviriyoruz (Örn: "SCORE:1500")
     const scoreHex = toHex(`SCORE:${score}`);
-    
-    // ERC-8021 Builder Code Suffix (Base dokümanlarındaki örnek suffix)
-    // Bu suffix sayesinde işlem Base.dev üzerinde uygulamanıza atfedilir.
     const builderCodeSuffix = "07626173656170700080218021802180218021802180218021";
-    
-    // Calldata'yı birleştiriyoruz
     const finalData = `${scoreHex}${builderCodeSuffix}` as `0x${string}`;
-
-    sendTransaction({
-      to: address, // İşlemi kullanıcının kendi adresine gönderiyoruz (Self-transfer)
-      value: 0n,   // 0 ETH
-      data: finalData,
-      chainId: base.id,
-    });
+    sendTransaction({ to: address, value: 0n, data: finalData, chainId: base.id });
   };
 
   return (
-    <div className="flex flex-col items-center gap-2 mt-4">
+    <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:'10px' }}>
       <button
-        onClick={(e) => {
-          e.stopPropagation(); // Canvas'ın tıklamayı algılayıp oyunu yeniden başlatmasını engelle
-          handleSave();
-        }}
+        onClick={(e) => { e.stopPropagation(); handleSave(); }}
         disabled={isPending || isConfirming || isSuccess}
-        className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-[0_0_15px_rgba(0,100,255,0.6)] transition-all disabled:opacity-50 disabled:cursor-not-allowed z-10"
+        style={{
+          padding: '12px 28px',
+          background: isPending || isConfirming || isSuccess
+            ? 'rgba(50,50,80,0.8)'
+            : 'linear-gradient(135deg, #0055ff, #00ccff)',
+          border: '1px solid rgba(0,200,255,0.5)',
+          borderRadius: '10px',
+          color: '#fff',
+          fontFamily: "'Courier New', monospace",
+          fontSize: '13px',
+          fontWeight: '800',
+          letterSpacing: '1px',
+          cursor: isPending || isConfirming || isSuccess ? 'not-allowed' : 'pointer',
+          boxShadow: '0 0 20px rgba(0,150,255,0.4)',
+          textTransform: 'uppercase',
+          transition: 'all 0.2s',
+          opacity: isPending || isConfirming ? 0.7 : 1,
+        }}
       >
-        {isPending ? 'Cüzdanda Onaylayın...' : 
-         isConfirming ? 'Ağa Kaydediliyor...' : 
-         isSuccess ? 'Skor Zincire Kaydedildi!' : 
-         'Skoru Zincire Kaydet (ERC-8021)'}
+        {isPending ? '⏳ Confirm in Wallet…'
+          : isConfirming ? '⛓ Recording on Base…'
+          : isSuccess ? '✅ Score Saved On-Chain!'
+          : '💾 Save Score On-Chain'}
       </button>
-      
+
       {hash && (
-        <a 
-          href={`https://basescan.org/tx/${hash}`} 
-          target="_blank" 
+        <a
+          href={`https://basescan.org/tx/${hash}`}
+          target="_blank"
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="text-sm text-blue-400 hover:text-blue-300 underline z-10"
+          style={{ fontSize:'11px', color:'#4488ff', textDecoration:'none', letterSpacing:'0.5px', fontFamily:'monospace' }}
         >
-          Basescan'de Görüntüle
+          ↗ View on Basescan
         </a>
       )}
     </div>

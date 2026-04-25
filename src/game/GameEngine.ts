@@ -56,10 +56,7 @@ export class GameEngine {
   initInput() {
     window.addEventListener('keydown', (e) => {
       this.keys[e.code] = true;
-      if (e.code === 'Space') {
-        if (this.state.status === 'playing') { this.releaseCaughtBalls(); this.fireLaser(); }
-        else if (this.state.status === 'gameOver' || this.state.status === 'victory') this.resetGame();
-      }
+      if (e.code === 'Space') this.handleAction();
       if (e.code === 'KeyP') {
         if (this.state.status === 'playing') this.state.status = 'paused';
         else if (this.state.status === 'paused') this.state.status = 'playing';
@@ -67,16 +64,33 @@ export class GameEngine {
       }
     });
     window.addEventListener('keyup', (e) => this.keys[e.code] = false);
-    this.canvas.addEventListener('mousemove', (e) => {
+
+    const updatePointer = (clientX: number) => {
       const rect = this.canvas.getBoundingClientRect();
       const scaleX = this.canvas.width / rect.width;
-      this.mouseX = (e.clientX - rect.left) * scaleX;
-    });
-    this.canvas.addEventListener('mousedown', (e) => {
-      if (this.state.status === 'playing') { this.releaseCaughtBalls(); this.fireLaser(); }
-      else if (this.state.status === 'start') this.startLevel();
-      else if (this.state.status === 'gameOver' || this.state.status === 'victory') this.resetGame();
-    });
+      this.mouseX = (clientX - rect.left) * scaleX;
+    };
+
+    this.canvas.addEventListener('mousemove', (e) => updatePointer(e.clientX));
+    this.canvas.addEventListener('mousedown', () => this.handleAction());
+
+    // Mobile touch support
+    this.canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault(); // Ekranın aşağı/yukarı kaymasını engeller
+      if (e.touches.length > 0) updatePointer(e.touches[0].clientX);
+      this.handleAction();
+    }, { passive: false });
+
+    this.canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault(); // Raketi hareket ettirirken ekranın sürüklenmesini engeller
+      if (e.touches.length > 0) updatePointer(e.touches[0].clientX);
+    }, { passive: false });
+  }
+
+  handleAction() {
+    if (this.state.status === 'playing') { this.releaseCaughtBalls(); this.fireLaser(); }
+    else if (this.state.status === 'start') this.startLevel();
+    else if (this.state.status === 'gameOver' || this.state.status === 'victory') this.resetGame();
   }
 
   notifyState() { if (this.onStateChange) this.onStateChange({ ...this.state }); }
