@@ -1,14 +1,14 @@
 import { Brick, BrickType } from './types';
 
 const COLORS = {
-  [BrickType.STANDARD]: '#00ffcc',
-  [BrickType.REINFORCED]: '#ff00cc',
-  [BrickType.INDESTRUCTIBLE]: '#666666',
-  [BrickType.EXPLOSIVE]: '#ff3300',
-  [BrickType.MOVING]: '#ccff00',
-  [BrickType.GHOST]: '#ffffff',
-  [BrickType.MULTIPLIER]: '#ffcc00',
-  [BrickType.WARP]: '#9900ff'
+  [BrickType.STANDARD]: '#3b82f6',
+  [BrickType.REINFORCED]: '#d946ef',
+  [BrickType.INDESTRUCTIBLE]: '#475569',
+  [BrickType.EXPLOSIVE]: '#ef4444',
+  [BrickType.MOVING]: '#f59e0b',
+  [BrickType.GHOST]: '#a855f7',
+  [BrickType.MULTIPLIER]: '#fbbf24',
+  [BrickType.WARP]: '#14b8a6'
 };
 
 export const LEVEL_NAMES = [

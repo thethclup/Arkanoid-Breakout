@@ -52,6 +52,16 @@ export interface Ball {
   speed: number;
   caught: boolean;
   caughtOffset: number;
+  trail?: { x: number, y: number }[];
+}
+
+export interface FloatingText {
+  x: number;
+  y: number;
+  text: string;
+  color: string;
+  life: number;
+  maxLife: number;
 }
 
 export interface Paddle extends Rect {

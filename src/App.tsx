@@ -50,17 +50,33 @@ export default function App() {
   const [muted, setMuted] = useState(false);
   const [highScores, setHighScores] = useState<{ name: string; score: number }[]>([]);
   const [glitch, setGlitch] = useState(false);
+  const [trailStyle, setTrailStyle] = useState<'solid' | 'dashed' | 'dotted'>('solid');
+  const [trailColor, setTrailColor] = useState<string>('#00ffff');
 
   useEffect(() => {
     if (canvasRef.current && !engineRef.current) {
       engineRef.current = new GameEngine(canvasRef.current);
       engineRef.current.onStateChange = setGameState;
+      engineRef.current.trailStyle = trailStyle;
+      engineRef.current.trailColor = trailColor;
       engineRef.current.start();
       const scores = JSON.parse(localStorage.getItem('arkanoid_highscores') || '[]');
       const mapped = scores.map((s: any) => (typeof s === 'number' ? { name: 'Anonymous', score: s } : s));
       setHighScores(mapped);
     }
   }, []);
+
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.trailStyle = trailStyle;
+    }
+  }, [trailStyle]);
+
+  useEffect(() => {
+    if (engineRef.current) {
+      engineRef.current.trailColor = trailColor;
+    }
+  }, [trailColor]);
 
   useEffect(() => {
     if (gameState?.status === 'gameOver') {
@@ -212,6 +228,48 @@ export default function App() {
                   <span className="ctrl-key">Mouse / ◄►</span><span className="ctrl-desc">Move paddle</span>
                   <span className="ctrl-key">Click / Space</span><span className="ctrl-desc">Launch / Fire</span>
                   <span className="ctrl-key">P</span><span className="ctrl-desc">Pause</span>
+                </div>
+              </div>
+
+              {/* Settings */}
+              <div className="panel-card">
+                <div className="panel-title">SETTINGS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    TRAIL STYLE
+                    <select
+                      value={trailStyle}
+                      onChange={(e) => setTrailStyle(e.target.value as any)}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border)',
+                        color: 'var(--neon-cyan)', padding: '2px 6px', borderRadius: '4px',
+                        outline: 'none', fontFamily: 'inherit', fontSize: '10px'
+                      }}
+                    >
+                      <option value="solid">Solid</option>
+                      <option value="dashed">Dashed</option>
+                      <option value="dotted">Dotted</option>
+                    </select>
+                  </label>
+                  
+                  <label style={{ fontSize: '11px', color: 'var(--text-dim)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    TRAIL COLOR
+                    <select
+                      value={trailColor}
+                      onChange={(e) => setTrailColor(e.target.value)}
+                      style={{
+                        background: 'rgba(0,0,0,0.5)', border: '1px solid var(--border)',
+                        color: 'var(--neon-cyan)', padding: '2px 6px', borderRadius: '4px',
+                        outline: 'none', fontFamily: 'inherit', fontSize: '10px'
+                      }}
+                    >
+                      <option value="#00ffff">Cyan</option>
+                      <option value="#00ff88">Green</option>
+                      <option value="#ff0088">Pink</option>
+                      <option value="#ffd700">Gold</option>
+                      <option value="#ffffff">White</option>
+                    </select>
+                  </label>
                 </div>
               </div>
             </aside>

@@ -1,4 +1,4 @@
-import { Brick, BrickType, PowerUpType, Ball, Paddle, Capsule, Particle, Laser, GameState } from './types';
+import { Brick, BrickType, PowerUpType, Ball, Paddle, Capsule, Particle, Laser, GameState, FloatingText } from './types';
 import { generateLevel, getLevelName } from './levels';
 import { audio } from './audio';
 
@@ -38,6 +38,8 @@ export class GameEngine {
   capsules: Capsule[] = [];
   particles: Particle[] = [];
   lasers: Laser[] = [];
+  floatingTexts: FloatingText[] = [];
+  shockwaves: { x: number, y: number, r: number, maxR: number, color: string, life: number, maxLife: number, type: BrickType }[] = [];
 
   keys: { [key: string]: boolean } = {};
   mouseX: number = CANVAS_WIDTH / 2;
@@ -45,6 +47,21 @@ export class GameEngine {
   levelTransitionTimer: number = 0;
   onStateChange?: (state: GameState) => void;
   playerName: string = 'Anonymous';
+  trailStyle: 'solid' | 'dashed' | 'dotted' = 'solid';
+  trailColor: string = '#00ffff';
+
+  // Helper to convert hex to rgb
+  getTrailColorRgba(alpha: number, isBomb: boolean) {
+    if (isBomb) return `rgba(255, 0, 0, ${alpha})`;
+    
+    // Convert hex to rgb
+    let hex = this.trailColor.replace('#', '');
+    if (hex.length === 3) hex = hex.charAt(0) + hex.charAt(0) + hex.charAt(1) + hex.charAt(1) + hex.charAt(2) + hex.charAt(2);
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
@@ -122,9 +139,10 @@ export class GameEngine {
     this.paddle.w = PADDLE_WIDTH;
     this.paddle.x = CANVAS_WIDTH / 2 - this.paddle.w / 2;
     this.paddle.targetX = this.paddle.x;
+    this.paddle.vx = 0;
     
     const speed = Math.min(BASE_BALL_SPEED + Math.floor(this.state.bricksDestroyed / 10) * 0.5, MAX_BALL_SPEED);
-    this.balls = [{ x: this.paddle.x + this.paddle.w / 2, y: this.paddle.y - BALL_RADIUS - 1, vx: speed * 0.7, vy: -speed * 0.7, radius: BALL_RADIUS, speed: speed, caught: true, caughtOffset: this.paddle.w / 2 }];
+    this.balls = [{ x: this.paddle.x + this.paddle.w / 2, y: this.paddle.y - BALL_RADIUS - 1, vx: speed * 0.7, vy: -speed * 0.7, radius: BALL_RADIUS, speed: speed, caught: true, caughtOffset: this.paddle.w / 2, trail: [] }];
   }
 
   startLevel() { this.state.status = 'playing'; this.balls.forEach(b => b.caught = false); this.notifyState(); }
@@ -155,11 +173,11 @@ export class GameEngine {
     this.capsules.push({ x, y, w: 24, h: 12, type, vy: 2, color: POWER_UP_COLORS[type], rotation: 0 });
   }
 
-  spawnParticles(x: number, y: number, color: string, count: number = 10) {
+  spawnParticles(x: number, y: number, color: string, count: number = 15) {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = Math.random() * 4 + 1;
-      this.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0, maxLife: Math.random() * 30 + 20, color, size: Math.random() * 3 + 1 });
+      const speed = Math.random() * 5 + 2;
+      this.particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, life: 0, maxLife: Math.random() * 20 + 15, color, size: Math.random() * 4 + 1.5 });
     }
   }
 
@@ -186,10 +204,11 @@ export class GameEngine {
       case PowerUpType.CATCH: duration = 10000; break;
       case PowerUpType.SLOW: duration = 15000; this.balls.forEach(b => { b.speed *= 0.65; this.updateBallVelocity(b); }); audio.powerDown(); break;
       case PowerUpType.SPEED: duration = 10000; this.balls.forEach(b => { b.speed *= 1.4; this.updateBallVelocity(b); }); break;
-      case PowerUpType.BOMB: this.balls.forEach(b => (b as any).bombActive = true); break;
+      case PowerUpType.BOMB: duration = 12000; this.balls.forEach(b => (b as any).bombActive = true); break;
       case PowerUpType.SHIELD: duration = 15000; this.state.shieldActive = true; this.state.shieldTimer = duration; break;
       case PowerUpType.EXTRA_LIFE: this.state.lives++; break;
     }
+    this.floatingTexts.push({ x: this.paddle.x + this.paddle.w/2, y: this.paddle.y - 20, text: type, color: POWER_UP_COLORS[type], life: 0, maxLife: 60 });
     if (duration > 0) this.state.activePowerUps.push({ type, timer: duration });
     this.notifyState();
   }
@@ -205,7 +224,23 @@ export class GameEngine {
 
     if (b.hp <= 0) {
       audio.destroyBrick();
-      this.spawnParticles(b.x + b.w/2, b.y + b.h/2, b.color);
+      this.spawnParticles(b.x + b.w/2, b.y + b.h/2, b.color, b.type === BrickType.GHOST ? 5 : 15);
+      
+      let maxR = 30;
+      if (b.type === BrickType.REINFORCED) maxR = 40;
+      else if (b.type === BrickType.EXPLOSIVE) maxR = 80;
+      else if (b.type === BrickType.GHOST) maxR = 50;
+
+      this.shockwaves.push({
+        x: b.x + b.w/2,
+        y: b.y + b.h/2,
+        r: 0,
+        maxR,
+        color: b.color,
+        life: 0,
+        maxLife: b.type === BrickType.GHOST ? 30 : 20,
+        type: b.type
+      });
       
       let pts = 10;
       if (b.type === BrickType.REINFORCED) pts = 25;
@@ -214,6 +249,7 @@ export class GameEngine {
       else if (b.type === BrickType.GHOST) pts = 50;
       if (b.multiplier) pts *= b.multiplier;
       this.state.score += pts;
+      this.floatingTexts.push({ x: b.x + b.w/2, y: b.y + b.h/2, text: `+${pts}`, color: '#fff', life: 0, maxLife: 40 });
 
       if (b.type === BrickType.WARP) { this.state.score += 1000; this.levelComplete(); return; }
 
@@ -228,6 +264,11 @@ export class GameEngine {
 
       if (b.type === BrickType.EXPLOSIVE || isBomb) {
         audio.explosion();
+        this.spawnParticles(b.x + b.w/2, b.y + b.h/2, '#ff0000', isBomb ? 40 : 20);
+        this.shockwaves.push({
+          x: b.x + b.w/2, y: b.y + b.h/2, r: 0, maxR: isBomb ? b.w * 3 : b.w * 1.5,
+          color: '#ff0000', life: 0, maxLife: 30, type: BrickType.EXPLOSIVE
+        });
         const radius = isBomb ? b.w * 3 : b.w * 1.5;
         this.bricks.forEach(other => {
           if (other.type !== BrickType.INDESTRUCTIBLE) {
@@ -273,6 +314,7 @@ export class GameEngine {
     this.state.activePowerUps.forEach(p => p.timer -= dt);
     this.state.activePowerUps = this.state.activePowerUps.filter(p => p.timer > 0);
     if (!this.state.activePowerUps.find(p => p.type === PowerUpType.EXPAND || p.type === PowerUpType.SHRINK)) this.paddle.widthMultiplier = 1;
+    if (!this.state.activePowerUps.find(p => p.type === PowerUpType.BOMB)) this.balls.forEach(b => (b as any).bombActive = false);
     
     if (this.state.shieldActive) {
       this.state.shieldTimer -= dt;
@@ -285,13 +327,31 @@ export class GameEngine {
     else this.paddle.targetX = this.mouseX - this.paddle.w / 2;
 
     this.paddle.targetX = Math.max(0, Math.min(CANVAS_WIDTH - this.paddle.w, this.paddle.targetX));
+    const previousX = this.paddle.x;
     this.paddle.x += (this.paddle.targetX - this.paddle.x) * 0.3;
+    this.paddle.vx = this.paddle.x - previousX;
+    
+    if (Math.abs(this.paddle.vx) > 3) {
+      if (Math.random() < 0.3) {
+        const px = this.paddle.vx > 0 ? this.paddle.x : this.paddle.x + this.paddle.w;
+        this.particles.push({
+          x: px, y: this.paddle.y + this.paddle.h / 2 + (Math.random() * 4 - 2),
+          vx: -this.paddle.vx * 0.2, vy: (Math.random() - 0.5) * 2,
+          life: 0, maxLife: 15 + Math.random() * 10,
+          color: '#ffffff', size: 1.5 + Math.random() * 2
+        });
+      }
+    }
 
     for (let i = this.balls.length - 1; i >= 0; i--) {
       const b = this.balls[i];
       if (b.caught) { b.x = this.paddle.x + b.caughtOffset; b.y = this.paddle.y - b.radius - 1; continue; }
 
       b.x += b.vx; b.y += b.vy;
+      
+      if (!b.trail) b.trail = [];
+      b.trail.push({ x: b.x, y: b.y });
+      if (b.trail.length > 8) b.trail.shift();
 
       if (b.x - b.radius < 0) { b.x = b.radius; b.vx *= -1; }
       if (b.x + b.radius > CANVAS_WIDTH) { b.x = CANVAS_WIDTH - b.radius; b.vx *= -1; }
@@ -327,7 +387,6 @@ export class GameEngine {
           else { b.vy *= -1; b.y += b.vy > 0 ? overlapY : -overlapY; }
 
           const isBomb = (b as any).bombActive;
-          if (isBomb) (b as any).bombActive = false;
           
           this.hitBrick(brick, b.x, b.y, isBomb);
           hit = true; break;
@@ -376,6 +435,19 @@ export class GameEngine {
       const p = this.particles[i];
       p.x += p.vx; p.y += p.vy; p.life++;
       if (p.life >= p.maxLife) this.particles.splice(i, 1);
+    }
+
+    for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
+      const ft = this.floatingTexts[i];
+      ft.y -= 1; ft.life++;
+      if (ft.life >= ft.maxLife) this.floatingTexts.splice(i, 1);
+    }
+
+    for (let i = this.shockwaves.length - 1; i >= 0; i--) {
+      const sw = this.shockwaves[i];
+      sw.life++;
+      sw.r = sw.maxR * (sw.life / sw.maxLife);
+      if (sw.life >= sw.maxLife) this.shockwaves.splice(i, 1);
     }
 
     this.bricks.forEach(b => {
@@ -451,15 +523,103 @@ export class GameEngine {
       this.ctx.globalAlpha = 1;
     });
 
+    this.shockwaves.forEach(sw => {
+      this.ctx.strokeStyle = sw.color;
+      this.ctx.globalAlpha = 1 - (sw.life / sw.maxLife);
+      this.ctx.lineWidth = sw.type === BrickType.EXPLOSIVE ? 4 : 2;
+      this.ctx.beginPath();
+      
+      if (sw.type === BrickType.REINFORCED || sw.type === BrickType.NORMAL) {
+        // Draw a diamond/box expanding
+        this.ctx.rect(sw.x - sw.r/2, sw.y - sw.r/2, sw.r, sw.r);
+      } else {
+        // Draw expanding circle
+        this.ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+      }
+      this.ctx.stroke();
+      this.ctx.globalAlpha = 1;
+    });
+
+    this.floatingTexts.forEach(ft => {
+      this.ctx.fillStyle = ft.color;
+      this.ctx.globalAlpha = 1 - (ft.life / ft.maxLife);
+      this.ctx.font = 'bold 16px monospace';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(ft.text, ft.x, ft.y);
+      this.ctx.globalAlpha = 1;
+    });
+
     this.ctx.fillStyle = '#4488ff';
-    this.ctx.beginPath(); this.ctx.roundRect(this.paddle.x, this.paddle.y, this.paddle.w, this.paddle.h, 5); this.ctx.fill();
+    this.ctx.save();
+    this.ctx.translate(this.paddle.x + this.paddle.w / 2, this.paddle.y + this.paddle.h / 2);
+    // Skew and stretch the paddle based on its velocity for a dynamic movement effect
+    const skew = -this.paddle.vx * 0.025;
+    const stretch = 1 + Math.abs(this.paddle.vx) * 0.01;
+    const squash = 1 / Math.max(1, stretch * 0.9);
+    
+    if (Math.abs(this.paddle.vx) > 0.1) {
+      this.ctx.transform(stretch, 0, skew, squash, 0, 0);
+    }
+    
+    // Add glow
+    this.ctx.shadowColor = '#00aaff';
+    this.ctx.shadowBlur = 10;
+    
+    this.ctx.beginPath(); this.ctx.roundRect(-this.paddle.w/2, -this.paddle.h/2, this.paddle.w, this.paddle.h, 5); this.ctx.fill();
+    this.ctx.shadowBlur = 0;
     this.ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    this.ctx.beginPath(); this.ctx.roundRect(this.paddle.x, this.paddle.y, this.paddle.w, 4, 5); this.ctx.fill();
+    this.ctx.beginPath(); this.ctx.roundRect(-this.paddle.w/2, -this.paddle.h/2, this.paddle.w, 4, 5); this.ctx.fill();
+    this.ctx.restore();
 
     this.balls.forEach(b => {
+      // Draw tail
+      if (b.trail && b.trail.length > 1) {
+        if (this.trailStyle === 'dotted') {
+           for (let i = 0; i < b.trail.length; i++) {
+             const t = b.trail[i];
+             const alpha = (i / b.trail.length) * 0.6;
+             this.ctx.fillStyle = this.getTrailColorRgba(alpha, (b as any).bombActive);
+             this.ctx.beginPath();
+             this.ctx.arc(t.x, t.y, b.radius * (i / b.trail.length), 0, Math.PI * 2);
+             this.ctx.fill();
+           }
+        } else {
+          for (let i = 0; i < b.trail.length - 1; i++) {
+            const t1 = b.trail[i];
+            const t2 = b.trail[i + 1];
+            const alpha = (i / b.trail.length) * 0.6;
+            this.ctx.beginPath();
+            
+            if (this.trailStyle === 'dashed') {
+              this.ctx.setLineDash([4, 4]);
+            } else {
+              this.ctx.setLineDash([]);
+            }
+
+            this.ctx.moveTo(t1.x, t1.y);
+            this.ctx.lineTo(t2.x, t2.y);
+            this.ctx.strokeStyle = this.getTrailColorRgba(alpha, (b as any).bombActive);
+            this.ctx.lineWidth = b.radius * (i / b.trail.length);
+            this.ctx.lineCap = 'round';
+            this.ctx.stroke();
+          }
+          this.ctx.setLineDash([]);
+        }
+      }
+
+      // Drop shadow for depth
+      this.ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+      this.ctx.shadowBlur = 4;
+      this.ctx.shadowOffsetX = 2;
+      this.ctx.shadowOffsetY = 4;
+      
       this.ctx.fillStyle = '#ffffff';
       this.ctx.beginPath(); this.ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2); this.ctx.fill();
-      this.ctx.shadowBlur = 10; this.ctx.shadowColor = '#00ffff'; this.ctx.fill(); this.ctx.shadowBlur = 0;
+      
+      // Reset drop shadow and apply glow
+      this.ctx.shadowOffsetX = 0;
+      this.ctx.shadowOffsetY = 0;
+      this.ctx.shadowBlur = 10; this.ctx.shadowColor = this.trailColor; this.ctx.fill(); this.ctx.shadowBlur = 0;
       if ((b as any).bombActive) {
         this.ctx.fillStyle = '#ff0000';
         this.ctx.beginPath(); this.ctx.arc(b.x, b.y, b.radius/2, 0, Math.PI * 2); this.ctx.fill();
