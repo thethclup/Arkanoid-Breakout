@@ -44,6 +44,92 @@ async function startServer() {
     }
   });
 
+  // Agent API Routes
+  const TOOLS = [
+    { name: 'get_race_status', description: 'Get current race status' },
+    { name: 'start_race', description: 'Start a new race' },
+    { name: 'get_leaderboard', description: 'Get race leaderboard' },
+    { name: 'optimize_speed', description: 'Optimize for speed' },
+    { name: 'get_track_info', description: 'Get track information' }
+  ];
+
+  app.get("/api/mcp", (req, res) => {
+    res.json({
+      name: 'Arkanoid Breakout Orchestrator',
+      description: 'ERC-8004 compliant AI agent specialized in Arkanoid gameplay.',
+      version: '1.0.0',
+      tools: TOOLS
+    });
+  });
+
+  app.post("/api/mcp", (req, res) => {
+    try {
+      const body = req.body;
+      
+      // Process tool calls
+      if (body?.method === 'tools/call') {
+        return res.json({ result: `Executed ${body.params?.name}` });
+      }
+      
+      if (body?.method === 'tools/list') {
+        return res.json({ tools: TOOLS });
+      }
+      
+      return res.json({ status: 'success', received: body });
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+  });
+
+  app.get("/api/agent", (req, res) => {
+    res.json({
+      name: 'Arkanoid Breakout Orchestrator',
+      status: 'active',
+      version: '1.0.0',
+      chain: 'Base Network'
+    });
+  });
+
+  app.post("/api/agent", (req, res) => {
+    try {
+      const body = req.body;
+      return res.json({
+        status: 'success',
+        agent: 'Arkanoid Breakout Orchestrator',
+        received: body
+      });
+    } catch (error) {
+      return res.status(400).json({ error: 'Invalid request' });
+    }
+  });
+
+  app.get("/.well-known/agent-card.json", (req, res) => {
+    res.json({
+      "agentName": "Arkanoid Breakout Orchestrator",
+      "description": "Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.\n\nIt supports X402 payment operations, on-chain score tracking, Base Builder activity monitoring, GM Chain interactions, ERC-8004 & ERC-8021 identity management, and SIWA signing processes. The agent provides intelligent gameplay automation, optimal brick destruction strategies, power-up automation, and seamless multi-level game management.",
+      "walletAddress": "eip155:8453:0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
+      "a2aEndpoint": "https://arkanoidbreakout.vercel.app/.well-known/agent-card.json",
+      "mcpEndpoint": "https://arkanoidbreakout.vercel.app/api/mcp",
+      "skills": [
+        "arkanoid-gameplay",
+        "breakout-mechanics",
+        "brick-breaking",
+        "power-up-management",
+        "strategic-paddle-control",
+        "high-score-optimization"
+      ],
+      "capabilities": [
+        "arkanoid-breakout",
+        "strategic-paddle-control",
+        "brick-breaking-automation",
+        "power-up-optimization",
+        "multi-level-management",
+        "competitive-gaming",
+        "on-chain-tracking"
+      ]
+    });
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

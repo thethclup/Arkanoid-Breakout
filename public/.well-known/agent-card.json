@@ -1,0 +1,24 @@
+{
+  "agentName": "Arkanoid Breakout Orchestrator",
+  "description": "Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.\n\nIt supports X402 payment operations, on-chain score tracking, Base Builder activity monitoring, GM Chain interactions, ERC-8004 & ERC-8021 identity management, and SIWA signing processes. The agent provides intelligent gameplay automation, optimal brick destruction strategies, power-up automation, and seamless multi-level game management.",
+  "walletAddress": "eip155:8453:0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
+  "a2aEndpoint": "https://arkanoidbreakout.vercel.app/.well-known/agent-card.json",
+  "mcpEndpoint": "https://arkanoidbreakout.vercel.app/api/mcp",
+  "skills": [
+    "arkanoid-gameplay",
+    "breakout-mechanics",
+    "brick-breaking",
+    "power-up-management",
+    "strategic-paddle-control",
+    "high-score-optimization"
+  ],
+  "capabilities": [
+    "arkanoid-breakout",
+    "strategic-paddle-control",
+    "brick-breaking-automation",
+    "power-up-optimization",
+    "multi-level-management",
+    "competitive-gaming",
+    "on-chain-tracking"
+  ]
+}

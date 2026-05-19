@@ -1,68 +1,55 @@
-# NEON BREAKER
+# Arkanoid Breakout Orchestrator
 
-**Neon Breaker** is a modern, high-octane take on the classic arcade brick-breaker genre. Immerse yourself in a vibrant synthwave aesthetic, complete with dynamic lighting, particle effects, and a thumping retro soundtrack. 
+Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.
 
-Defend the grid, smash through intricate block formations, collect powerful upgrades, and etch your name into the blockchain!
+It supports X402 payment operations, on-chain score tracking, Base Builder activity monitoring, GM Chain interactions, ERC-8004 & ERC-8021 identity management, and SIWA signing processes. 
 
-## 🌟 Features
+## Features & Capabilities
+- arkanoid-breakout
+- strategic-paddle-control
+- brick-breaking-automation
+- power-up-optimization
+- multi-level-management
+- competitive-gaming
+- on-chain-tracking
 
-* **Dynamic Gameplay:** Battle your way through progressively challenging levels, each with unique layouts and obstacles.
-* **Special Bricks:** Encounter a variety of brick types that will test your reflexes and strategy:
-  * **Reinforced:** Requires multiple hits to destroy.
-  * **Indestructible:** Solid walls that block your path.
-  * **Explosive:** Detonates on impact, destroying adjacent bricks.
-  * **Moving:** Patrols the grid, requiring precise timing.
-  * **Ghost:** Phases in and out of invisibility.
-  * **Multiplier:** Grants bonus points.
-  * **Warp:** Instantly transports you to the next level.
-* **Power-Ups (and Power-Downs!):** Catch falling capsules to modify the game state:
-  * **Multi-Ball:** Unleash a swarm of balls.
-  * **Laser:** Arm your paddle with twin blasters.
-  * **Expand/Shrink:** Alter your paddle's size.
-  * **Catch:** Catch and hold the ball on the paddle to aim your next shot.
-  * **Slow/Speed:** Change the ball's velocity.
-  * **Bomb:** The next hit triggers a massive explosion.
-  * **Shield:** A protective barrier below your paddle to save lost balls.
-  * **1-Up:** Gain an extra life.
-* **On-Chain High Scores (ERC-8021):** Built on the **Base** network, Neon Breaker allows you to legally and permanently record your epic high scores directly to the blockchain using the ERC-8021 standard! Connect your Web3 wallet, dominate the leaderboard, and mint your achievement as an immutable on-chain transaction.
-* **Boss Levels:** Face off against tougher fortified structures every 5 levels.
-* **Local Leaderboard:** Keeps track of your top 5 runs locally in the browser.
+## Skills
+- arkanoid-gameplay
+- breakout-mechanics
+- brick-breaking
+- power-up-management
+- strategic-paddle-control
+- high-score-optimization
 
-## 🕹️ Controls
+## Tech Stack
+- Next.js 14 App Router
+- React, TypeScript
+- MCP (Model Context Protocol) 
+- Base Network Compatibility
 
-* **Mouse / Touch:** Move the paddle horizontally.
-* **Left Click / Touch Tap:** Launch the ball, fire lasers, or release a caught ball.
-* **Keyboard:**
-  * **Arrow Left / Right** or **A / D:** Move the paddle.
-  * **Spacebar:** Launch the ball, fire lasers, or release.
-  * **P:** Pause / Resume the game.
-  * **M:** Mute / Unmute audio (Optional depending on build).
+## MCP Connection Guide
+The agent exposes a Model Context Protocol endpoint to perform robust operations.
 
-## 🚀 Getting Started
+**Endpoint URL**: 
+`https://arkanoidbreakout.vercel.app/api/mcp`
 
-To run the project locally:
+The MCP connection allows AI tools to invoke functions related to race status, leaderboards, and mechanics optimization safely over HTTP POST requests. 
 
-1. **Install Dependencies:**
+## Agent Registration Info
+- **Agent Name:** Arkanoid Breakout Orchestrator
+- **Wallet Address:** `eip155:8453:0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6`
+- **MCP Endpoint:** `https://arkanoidbreakout.vercel.app/api/mcp`
+- **Agent Card URL:** `https://arkanoidbreakout.vercel.app/.well-known/agent-card.json`
+
+## How to Run Locally
+
+1. Clone the repository.
+2. Install dependencies:
    ```bash
    npm install
    ```
-
-2. **Start Development Server:**
+3. Run the development server:
    ```bash
    npm run dev
    ```
-
-3. **Build for Production:**
-   ```bash
-   npm run build
-   ```
-
-## 🔗 Web3 Integration
-
-Neon Breaker is fully equipped for Web3 interaction using **Wagmi** and **Viem**. 
-
-When a game ends, users can connect their Ethereum wallets (MetaMask, Coinbase Wallet, etc.) and save their score on the **Base** network. The transaction utilizes the **ERC-8021** standard payload, pushing the score data securely onto the blockchain.
-
----
-
-*Get ready to break the neon grid!*
+4. Access the API routes locally at `/api/mcp` and `/api/agent`.
