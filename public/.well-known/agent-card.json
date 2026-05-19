@@ -1,24 +1,60 @@
 {
-  "agentName": "Arkanoid Breakout Orchestrator",
-  "description": "Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.\n\nIt supports X402 payment operations, on-chain score tracking, Base Builder activity monitoring, GM Chain interactions, ERC-8004 & ERC-8021 identity management, and SIWA signing processes. The agent provides intelligent gameplay automation, optimal brick destruction strategies, power-up automation, and seamless multi-level game management.",
-  "walletAddress": "eip155:8453:0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
-  "a2aEndpoint": "https://arkanoidbreakout.vercel.app/.well-known/agent-card.json",
-  "mcpEndpoint": "https://arkanoidbreakout.vercel.app/api/mcp",
+  "name": "Arkanoid Breakout Orchestrator",
+  "description": "Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.",
+  "version": "1.0.0",
+  "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+  "image": "https://arkanoidbreakout.vercel.app/logo.png",
+  "owner": "0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
+  "agentWallet": "0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
+  "active": true,
   "skills": [
-    "arkanoid-gameplay",
-    "breakout-mechanics",
-    "brick-breaking",
-    "power-up-management",
-    "strategic-paddle-control",
-    "high-score-optimization"
+    {
+      "id": "arkanoid-gameplay",
+      "name": "Arkanoid Gameplay",
+      "description": "Manage Arkanoid and Breakout style puzzle mechanics"
+    },
+    {
+      "id": "brick-breaking",
+      "name": "Brick Breaking",
+      "description": "Optimize brick destruction and power-up collection"
+    },
+    {
+      "id": "high-score-optimization",
+      "name": "High Score Optimization",
+      "description": "Maximize scoring through strategic paddle control"
+    }
+  ],
+  "services": [
+    {
+      "name": "A2A",
+      "version": "1.0.0",
+      "endpoint": "https://arkanoidbreakout.vercel.app/.well-known/agent-card.json"
+    },
+    {
+      "name": "MCP",
+      "version": "1.0.0",
+      "endpoint": "https://arkanoidbreakout.vercel.app/api/mcp"
+    },
+    {
+      "name": "API",
+      "version": "1.0.0",
+      "endpoint": "https://arkanoidbreakout.vercel.app/api/agent"
+    }
   ],
   "capabilities": [
     "arkanoid-breakout",
+    "brick-breaking",
+    "power-up-management",
     "strategic-paddle-control",
-    "brick-breaking-automation",
-    "power-up-optimization",
-    "multi-level-management",
-    "competitive-gaming",
-    "on-chain-tracking"
-  ]
+    "high-score-optimization",
+    "multi-level-management"
+  ],
+  "supportedChains": ["eip155:8453"],
+  "x402Support": false,
+  "registrations": [
+    {
+      "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+    }
+  ],
+  "supportedTrust": ["reputation"]
 }

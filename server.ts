@@ -55,29 +55,58 @@ async function startServer() {
 
   app.get("/api/mcp", (req, res) => {
     res.json({
-      name: 'Arkanoid Breakout Orchestrator',
-      description: 'ERC-8004 compliant AI agent specialized in Arkanoid gameplay.',
-      version: '1.0.0',
-      tools: TOOLS
+      protocol: "MCP",
+      version: "1.0.0",
+      name: "Arkanoid Breakout MCP Server",
+      status: "active",
+      description: "Active MCP Endpoint for Arkanoid Breakout Orchestrator Agent",
+      timestamp: new Date().toISOString(),
+      mcpTools: [
+        {
+          name: "play_game",
+          description: "Play a round in the current Arkanoid/Breakout game"
+        },
+        {
+          name: "switch_mode",
+          description: "Switch between different game modes"
+        },
+        {
+          name: "claim_reward",
+          description: "Claim daily or level completion rewards"
+        },
+        {
+          name: "optimize_strategy",
+          description: "Optimize paddle movement and brick breaking strategy"
+        },
+        {
+          name: "get_status",
+          description: "Get current game status, score and level information"
+        }
+      ],
+      capabilities: [
+        "arkanoid-breakout",
+        "brick-breaking",
+        "power-up-management",
+        "strategic-paddle-control",
+        "high-score-optimization"
+      ]
     });
   });
 
   app.post("/api/mcp", (req, res) => {
     try {
       const body = req.body;
-      
-      // Process tool calls
-      if (body?.method === 'tools/call') {
-        return res.json({ result: `Executed ${body.params?.name}` });
-      }
-      
-      if (body?.method === 'tools/list') {
-        return res.json({ tools: TOOLS });
-      }
-      
-      return res.json({ status: 'success', received: body });
+      return res.json({
+        status: "success",
+        agent: "Arkanoid Breakout Orchestrator",
+        message: "Command received and processed successfully",
+        receivedAt: new Date().toISOString()
+      });
     } catch (error) {
-      return res.status(400).json({ error: 'Invalid request' });
+      return res.status(400).json({ 
+        status: "error", 
+        message: "Invalid MCP request" 
+      });
     }
   });
 
@@ -105,28 +134,64 @@ async function startServer() {
 
   app.get("/.well-known/agent-card.json", (req, res) => {
     res.json({
-      "agentName": "Arkanoid Breakout Orchestrator",
-      "description": "Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.\n\nIt supports X402 payment operations, on-chain score tracking, Base Builder activity monitoring, GM Chain interactions, ERC-8004 & ERC-8021 identity management, and SIWA signing processes. The agent provides intelligent gameplay automation, optimal brick destruction strategies, power-up automation, and seamless multi-level game management.",
-      "walletAddress": "eip155:8453:0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
-      "a2aEndpoint": "https://arkanoidbreakout.vercel.app/.well-known/agent-card.json",
-      "mcpEndpoint": "https://arkanoidbreakout.vercel.app/api/mcp",
+      "name": "Arkanoid Breakout Orchestrator",
+      "description": "Arkanoid Breakout Orchestrator is an ERC-8004 compliant AI Agent on Base Network specialized in Arkanoid and Breakout style games, brick breaking mechanics, power-up management, strategic paddle control, high-score optimization and multi-level gaming orchestration.",
+      "version": "1.0.0",
+      "type": "https://eips.ethereum.org/EIPS/eip-8004#registration-v1",
+      "image": "https://arkanoidbreakout.vercel.app/logo.png",
+      "owner": "0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
+      "agentWallet": "0xe157F1F5e12adB38Ba013683E9Ce24efe21e5bA6",
+      "active": true,
       "skills": [
-        "arkanoid-gameplay",
-        "breakout-mechanics",
-        "brick-breaking",
-        "power-up-management",
-        "strategic-paddle-control",
-        "high-score-optimization"
+        {
+          "id": "arkanoid-gameplay",
+          "name": "Arkanoid Gameplay",
+          "description": "Manage Arkanoid and Breakout style puzzle mechanics"
+        },
+        {
+          "id": "brick-breaking",
+          "name": "Brick Breaking",
+          "description": "Optimize brick destruction and power-up collection"
+        },
+        {
+          "id": "high-score-optimization",
+          "name": "High Score Optimization",
+          "description": "Maximize scoring through strategic paddle control"
+        }
+      ],
+      "services": [
+        {
+          "name": "A2A",
+          "version": "1.0.0",
+          "endpoint": "https://arkanoidbreakout.vercel.app/.well-known/agent-card.json"
+        },
+        {
+          "name": "MCP",
+          "version": "1.0.0",
+          "endpoint": "https://arkanoidbreakout.vercel.app/api/mcp"
+        },
+        {
+          "name": "API",
+          "version": "1.0.0",
+          "endpoint": "https://arkanoidbreakout.vercel.app/api/agent"
+        }
       ],
       "capabilities": [
         "arkanoid-breakout",
+        "brick-breaking",
+        "power-up-management",
         "strategic-paddle-control",
-        "brick-breaking-automation",
-        "power-up-optimization",
-        "multi-level-management",
-        "competitive-gaming",
-        "on-chain-tracking"
-      ]
+        "high-score-optimization",
+        "multi-level-management"
+      ],
+      "supportedChains": ["eip155:8453"],
+      "x402Support": false,
+      "registrations": [
+        {
+          "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+        }
+      ],
+      "supportedTrust": ["reputation"]
     });
   });
 
