@@ -529,7 +529,7 @@ export class GameEngine {
       this.ctx.lineWidth = sw.type === BrickType.EXPLOSIVE ? 4 : 2;
       this.ctx.beginPath();
       
-      if (sw.type === BrickType.REINFORCED || sw.type === BrickType.NORMAL) {
+      if (sw.type === BrickType.REINFORCED || sw.type === BrickType.STANDARD) {
         // Draw a diamond/box expanding
         this.ctx.rect(sw.x - sw.r/2, sw.y - sw.r/2, sw.r, sw.r);
       } else {

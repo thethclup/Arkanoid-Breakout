@@ -26,7 +26,28 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
       status: "active",
       description: "Active MCP Endpoint for Arkanoid Breakout Orchestrator Agent",
       timestamp: new Date().toISOString(),
-      mcpTools: TOOLS,
+      mcpTools: [
+        {
+          name: "play_game",
+          description: "Play a round in the current Arkanoid/Breakout game"
+        },
+        {
+          name: "switch_mode",
+          description: "Switch between different game modes"
+        },
+        {
+          name: "claim_reward",
+          description: "Claim daily or level completion rewards"
+        },
+        {
+          name: "optimize_strategy",
+          description: "Optimize paddle movement and brick breaking strategy"
+        },
+        {
+          name: "get_status",
+          description: "Get current game status, score and level information"
+        }
+      ],
       capabilities: [
         "arkanoid-breakout",
         "brick-breaking",
