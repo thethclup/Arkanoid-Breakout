@@ -1,5 +1,3 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
 const TOOLS = [
   { name: 'get_race_status', description: 'Get current race status' },
   { name: 'start_race', description: 'Start a new race' },
@@ -8,11 +6,12 @@ const TOOLS = [
   { name: 'get_track_info', description: 'Get track information' }
 ];
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default function handler(req: any, res: any) {
   // CORS Headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();

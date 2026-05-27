@@ -1,5 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    },
+  });
+}
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, max-age=0',
+  };
+}
+
 export async function GET() {
   return NextResponse.json({
     protocol: "MCP",
@@ -37,7 +59,7 @@ export async function GET() {
       "strategic-paddle-control",
       "high-score-optimization"
     ]
-  });
+  }, { headers: corsHeaders() });
 }
 
 export async function POST(req: NextRequest) {
@@ -77,7 +99,7 @@ export async function POST(req: NextRequest) {
         jsonrpc: "2.0",
         id: body.id,
         result: { tools: mcpTools }
-      });
+      }, { headers: corsHeaders() });
     }
 
     if (body.method === "tools/call") {
@@ -87,7 +109,7 @@ export async function POST(req: NextRequest) {
         result: {
           content: [{ type: "text", text: `Executed ${body.params?.name}` }]
         }
-      });
+      }, { headers: corsHeaders() });
     }
 
     if (body.method === "prompts/list") {
@@ -95,7 +117,7 @@ export async function POST(req: NextRequest) {
         jsonrpc: "2.0",
         id: body.id,
         result: { prompts: [] }
-      });
+      }, { headers: corsHeaders() });
     }
 
     if (body.method === "resources/list") {
@@ -103,7 +125,7 @@ export async function POST(req: NextRequest) {
         jsonrpc: "2.0",
         id: body.id,
         result: { resources: [] }
-      });
+      }, { headers: corsHeaders() });
     }
 
     return NextResponse.json({
@@ -111,11 +133,11 @@ export async function POST(req: NextRequest) {
       agent: "Arkanoid Breakout Orchestrator",
       message: "Command received and processed successfully",
       receivedAt: new Date().toISOString()
-    });
+    }, { headers: corsHeaders() });
   } catch (error) {
     return NextResponse.json({ 
       status: "error", 
       message: "Invalid MCP request" 
-    }, { status: 400 });
+    }, { status: 400, headers: corsHeaders() });
   }
 }
