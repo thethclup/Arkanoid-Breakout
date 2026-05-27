@@ -43,6 +43,69 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+
+    const mcpTools = [
+      {
+        name: "play_game",
+        description: "Play a round in the current Arkanoid/Breakout game",
+        inputSchema: { type: "object", properties: {} }
+      },
+      {
+        name: "switch_mode",
+        description: "Switch between different game modes",
+        inputSchema: { type: "object", properties: {} }
+      },
+      {
+        name: "claim_reward",
+        description: "Claim daily or level completion rewards",
+        inputSchema: { type: "object", properties: {} }
+      },
+      {
+        name: "optimize_strategy",
+        description: "Optimize paddle movement and brick breaking strategy",
+        inputSchema: { type: "object", properties: {} }
+      },
+      {
+        name: "get_status",
+        description: "Get current game status, score and level information",
+        inputSchema: { type: "object", properties: {} }
+      }
+    ];
+
+    if (body.method === "tools/list") {
+      return NextResponse.json({
+        jsonrpc: "2.0",
+        id: body.id,
+        result: { tools: mcpTools }
+      });
+    }
+
+    if (body.method === "tools/call") {
+      return NextResponse.json({
+        jsonrpc: "2.0",
+        id: body.id,
+        result: {
+          content: [{ type: "text", text: `Executed ${body.params?.name}` }]
+        }
+      });
+    }
+
+    if (body.method === "prompts/list") {
+      return NextResponse.json({
+        jsonrpc: "2.0",
+        id: body.id,
+        result: { prompts: [] }
+      });
+    }
+
+    if (body.method === "resources/list") {
+      return NextResponse.json({
+        jsonrpc: "2.0",
+        id: body.id,
+        result: { resources: [] }
+      });
+    }
+
     return NextResponse.json({
       status: "success",
       agent: "Arkanoid Breakout Orchestrator",

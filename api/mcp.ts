@@ -62,13 +62,67 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
     try {
       const body = req.body;
       
+      const mcpTools = [
+        {
+          name: "play_game",
+          description: "Play a round in the current Arkanoid/Breakout game",
+          inputSchema: { type: "object", properties: {} }
+        },
+        {
+          name: "switch_mode",
+          description: "Switch between different game modes",
+          inputSchema: { type: "object", properties: {} }
+        },
+        {
+          name: "claim_reward",
+          description: "Claim daily or level completion rewards",
+          inputSchema: { type: "object", properties: {} }
+        },
+        {
+          name: "optimize_strategy",
+          description: "Optimize paddle movement and brick breaking strategy",
+          inputSchema: { type: "object", properties: {} }
+        },
+        {
+          name: "get_status",
+          description: "Get current game status, score and level information",
+          inputSchema: { type: "object", properties: {} }
+        }
+      ];
+
       // Process tool calls
       if (body?.method === 'tools/call') {
-        return res.status(200).json({ result: `Executed ${body.params?.name}` });
+        return res.status(200).json({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: {
+            content: [{ type: "text", text: `Executed ${body.params?.name}` }]
+          }
+        });
       }
       
       if (body?.method === 'tools/list') {
-        return res.status(200).json({ tools: TOOLS });
+        return res.status(200).json({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: { tools: mcpTools }
+        });
+      }
+
+      if (body?.method === "prompts/list") {
+        return res.status(200).json({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: { prompts: [] }
+        });
+      }
+
+      if (body?.method === "resources/list") {
+        return res.status(200).json({
+          jsonrpc: "2.0",
+          id: body.id,
+          result: { resources: [] }
+        });
       }
 
       return res.status(200).json({
