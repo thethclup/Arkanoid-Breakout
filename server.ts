@@ -1,9 +1,11 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
+import { stringToHex, concatHex, Hex } from "viem";
 
 const BASE_API_KEY = process.env.BASE_NOTIFICATIONS_API_KEY || "bdev_ulykmTUhLl316G13SBR2o8Z3sYwFVdGQCFNM6Dpy0EI";
 const APP_URL = "https://ais-dev-3sklzmrcmud7wmnlgrwt3s-564665804356.europe-west2.run.app";
+const BUILDER_SUFFIX = "07626173656170700080218021802180218021802180218021";
 
 async function startServer() {
   const app = express();
@@ -173,6 +175,77 @@ async function startServer() {
     }
   });
 
+  // --- Base MCP Proxy Endpoints ---
+  app.get("/api/base-mcp/balance", async (req, res) => {
+    try {
+      const { asset, chain } = req.query;
+      const response = await fetch(`https://mcp.base.org/balance?asset=${asset || 'USDC'}&chain=${chain || 'base'}`);
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/base-mcp/send", async (req, res) => {
+    try {
+      const { recipient, asset, amount, chain } = req.body;
+      const txData = concatHex(['0x', `0x${BUILDER_SUFFIX}`] as [Hex, Hex]);
+      const response = await fetch("https://mcp.base.org/send", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipient, asset, amount, chain: chain || 'base', data: txData })
+      });
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/base-mcp/swap", async (req, res) => {
+    try {
+      const { fromAsset, toAsset, amount, chain } = req.body;
+      const txData = concatHex(['0x', `0x${BUILDER_SUFFIX}`] as [Hex, Hex]);
+      const response = await fetch("https://mcp.base.org/swap", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromAsset, toAsset, amount, chain: chain || 'base', data: txData })
+      });
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/base-mcp/x402", async (req, res) => {
+    try {
+      const { url, maxAmount, asset, chain } = req.body;
+      const txData = concatHex(['0x', `0x${BUILDER_SUFFIX}`] as [Hex, Hex]);
+      const response = await fetch("https://mcp.base.org/x402", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, maxAmount, asset: asset || "USDC", chain: chain || "base", data: txData })
+      });
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/base-mcp/status/:requestId", async (req, res) => {
+    try {
+      const response = await fetch(`https://mcp.base.org/status/${req.params.requestId}`);
+      const data = await response.json();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+  // --------------------------------
+
   app.get("/api/agent", (req, res) => {
     res.json({
       name: 'Arkanoid Breakout Orchestrator',
@@ -220,6 +293,11 @@ async function startServer() {
           "id": "high-score-optimization",
           "name": "High Score Optimization",
           "description": "Maximize scoring through strategic paddle control"
+        },
+        {
+          "id": "base-mcp-wallet",
+          "name": "Base MCP Wallet",
+          "description": "Check balances, send tokens, swap assets and pay x402 APIs via Base MCP"
         }
       ],
       "services": [
@@ -237,6 +315,11 @@ async function startServer() {
           "name": "API",
           "version": "1.0.0",
           "endpoint": "https://arkanoidbreakout.vercel.app/api/agent"
+        },
+        {
+          "name": "BaseMCP",
+          "version": "1.0.0",
+          "endpoint": "https://mcp.base.org"
         }
       ],
       "capabilities": [
@@ -245,10 +328,14 @@ async function startServer() {
         "power-up-management",
         "strategic-paddle-control",
         "high-score-optimization",
-        "multi-level-management"
+        "multi-level-management",
+        "base-mcp-wallet",
+        "token-swap",
+        "x402-payment",
+        "defi-yield"
       ],
       "supportedChains": ["eip155:8453"],
-      "x402Support": false,
+      "x402Support": true,
       "registrations": [
         {
           "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"

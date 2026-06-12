@@ -14,6 +14,7 @@ import { config } from './config/wagmi';
 import { ConnectWallet } from './components/ConnectWallet';
 import { SaveScoreOnchain } from './components/SaveScoreOnchain';
 import { GMChain } from './components/GMChain';
+import { BaseMCPPanel } from './components/BaseMCPPanel';
 
 const queryClient = new QueryClient();
 
@@ -204,6 +205,9 @@ export default function App() {
             <aside className="side-panel">
               {/* GM Chain */}
               <GMChain />
+
+              {/* Base MCP Wallet Panel */}
+              <BaseMCPPanel />
 
               {/* High Scores */}
               <div className="panel-card">

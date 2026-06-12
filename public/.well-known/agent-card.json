@@ -22,6 +22,11 @@
       "id": "high-score-optimization",
       "name": "High Score Optimization",
       "description": "Maximize scoring through strategic paddle control"
+    },
+    {
+      "id": "base-mcp-wallet",
+      "name": "Base MCP Wallet",
+      "description": "Check balances, send tokens, swap assets and pay x402 APIs via Base MCP"
     }
   ],
   "services": [
@@ -39,6 +44,11 @@
       "name": "API",
       "version": "1.0.0",
       "endpoint": "https://arkanoidbreakout.vercel.app/api/agent"
+    },
+    {
+      "name": "BaseMCP",
+      "version": "1.0.0",
+      "endpoint": "https://mcp.base.org"
     }
   ],
   "capabilities": [
@@ -47,10 +57,14 @@
     "power-up-management",
     "strategic-paddle-control",
     "high-score-optimization",
-    "multi-level-management"
+    "multi-level-management",
+    "base-mcp-wallet",
+    "token-swap",
+    "x402-payment",
+    "defi-yield"
   ],
   "supportedChains": ["eip155:8453"],
-  "x402Support": false,
+  "x402Support": true,
   "registrations": [
     {
       "agentRegistry": "eip155:8453:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
