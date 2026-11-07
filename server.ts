@@ -2,6 +2,90 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import { stringToHex, concatHex, Hex } from "viem";
+import fs from "fs";
+
+// Fetch documentation as requested by user and save to a local markdown file
+async function fetchDocs() {
+  const targetDocFile = path.join(process.cwd(), "src", "fetched-doc.md");
+  let content = "# Fetched Base MCP Documentation\n\n";
+
+  try {
+    const directRes1 = await fetch("https://docs.base.org/ai-agents/skills/SKILL.md");
+    if (directRes1.ok) {
+      const text = await directRes1.text();
+      content += `## Direct SKILL.md GET\n\n${text}\n\n`;
+    } else {
+      content += `## Direct SKILL.md GET Failed\nStatus: ${directRes1.status} ${directRes1.statusText}\n\n`;
+    }
+  } catch (err: any) {
+    content += `## Direct SKILL.md GET Error\n${err.message}\n\n`;
+  }
+
+  try {
+    const directRes2 = await fetch("https://docs.base.org/ai-agents.md");
+    if (directRes2.ok) {
+      const text = await directRes2.text();
+      content += `## Direct ai-agents.md GET\n\n${text}\n\n`;
+    } else {
+      content += `## Direct ai-agents.md GET Failed\nStatus: ${directRes2.status} ${directRes2.statusText}\n\n`;
+    }
+  } catch (err: any) {
+    content += `## Direct ai-agents.md GET Error\n${err.message}\n\n`;
+  }
+
+  // Try POST to MCP for both root and /api/mcp endpoints
+  const mcpEndpoints = ["https://mcp.base.org", "https://mcp.base.org/api/mcp"];
+  for (const endpoint of mcpEndpoints) {
+    try {
+      const listRes = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "tools/list",
+          params: {},
+          id: 1
+        })
+      });
+      if (listRes.ok) {
+        const json = await listRes.json();
+        content += `## MCP tools/list from ${endpoint}\n\n\`\`\`json\n${JSON.stringify(json, null, 2)}\n\`\`\`\n\n`;
+        
+        // Check if web_request exists in tools
+        const tools = json.result?.tools || [];
+        const hasWebRequest = tools.some((t: any) => t.name === "web_request");
+        if (hasWebRequest) {
+          const callRes = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              method: "tools/call",
+              params: {
+                name: "web_request",
+                arguments: {
+                  url: "https://docs.base.org/ai-agents/skills/SKILL.md"
+                }
+              },
+              id: 2
+            })
+          });
+          if (callRes.ok) {
+            const callJson = await callRes.json();
+            content += `## MCP tools/call web_request result\n\n\`\`\`json\n${JSON.stringify(callJson, null, 2)}\n\`\`\`\n\n`;
+          }
+        }
+      }
+    } catch (err: any) {
+      content += `## MCP POST to ${endpoint} Error\n${err.message}\n\n`;
+    }
+  }
+
+  fs.writeFileSync(targetDocFile, content, "utf-8");
+  console.log("Successfully wrote documentation to src/fetched-doc.md");
+}
+
+fetchDocs();
 
 const BASE_API_KEY = process.env.BASE_NOTIFICATIONS_API_KEY || "bdev_ulykmTUhLl316G13SBR2o8Z3sYwFVdGQCFNM6Dpy0EI";
 const APP_URL = "https://ais-dev-3sklzmrcmud7wmnlgrwt3s-564665804356.europe-west2.run.app";

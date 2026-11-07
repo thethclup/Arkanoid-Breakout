@@ -1,5 +1,6 @@
 {
-  "name": "",
-  "description": "",
-  "requestFramePermissions": []
+  "name": "Arkanoid Breakout with Base MCP",
+  "description": "An Arkanoid Breakout game on Base Network integrated with Base Model Context Protocol with support for wallet transactions, swaps, on-chain high score preservation, and notifications.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
