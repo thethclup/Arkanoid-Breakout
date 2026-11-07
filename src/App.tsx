@@ -111,13 +111,17 @@ export default function App() {
     return () => { window.removeEventListener('click', initAudio); window.removeEventListener('keydown', initAudio); };
   }, []);
 
+  const handleNameChange = React.useCallback((name: string) => {
+    if (engineRef.current) engineRef.current.playerName = name;
+  }, []);
+
   const score = gameState?.score || 0;
   const lives = gameState?.lives || 0;
   const level = gameState?.level || 1;
   const status = gameState?.status;
 
   return (
-    <WagmiProvider config={config}>
+    <WagmiProvider config={config} reconnectOnMount={false}>
       <QueryClientProvider client={queryClient}>
         <div className={`root-shell ${glitch ? 'glitch-active' : ''}`}>
 
@@ -128,17 +132,21 @@ export default function App() {
           <header className="top-bar">
             <div className="logo-group">
               <div className="logo-text">NEON<span className="logo-accent">BREAKER</span></div>
-              <div className="logo-sub">BASE MAINNET ARCADE</div>
+              <div className="logo-sub">BASE MAINNET · DENIM 200ms BLOCKS</div>
             </div>
 
             <div className="stat-row">
+              <div className="denim-badge-card" title="Base Denim Native 200ms Canonical Blocks">
+                <span className="denim-pulse-dot" />
+                <span className="denim-badge-text">DENIM 200ms</span>
+              </div>
               <StatCard label="SCORE" value={score.toLocaleString()} color="#ffd700" icon={<Star size={12} />} />
               <StatCard label="LEVEL" value={String(level)} color="#00ff88" icon={<Zap size={12} />} />
               <StatCard label="LIVES" value={'♥'.repeat(Math.max(0, lives))} color="#ff4466" icon={<Shield size={12} />} />
             </div>
 
             <div className="controls-group">
-              <ConnectWallet onNameChange={(name) => { if (engineRef.current) engineRef.current.playerName = name; }} />
+              <ConnectWallet onNameChange={handleNameChange} />
               <div className="icon-btns">
                 <button onClick={togglePause} className="icon-btn" title="Pause / Play">
                   {status === 'paused' ? <Play size={16} /> : <Pause size={16} />}
@@ -281,8 +289,8 @@ export default function App() {
 
           {/* ── Footer ── */}
           <footer className="bottom-bar">
-            <span>NEON BREAKER · POWERED BY BASE MAINNET</span>
-            <span>ERC-8021 ON-CHAIN SCORES</span>
+            <span>NEON BREAKER · BASE MAINNET DENIM (200ms CANONICAL BLOCKS)</span>
+            <span>ERC-8021 ON-CHAIN SCORES · BASE MCP AGENT</span>
           </footer>
 
           {/* ── Global styles ── */}
@@ -400,6 +408,33 @@ export default function App() {
             }
 
             .stat-row { display: flex; gap: 10px; align-items: center; }
+
+            .denim-badge-card {
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              padding: 6px 12px;
+              background: linear-gradient(135deg, rgba(0,200,255,0.12), rgba(0,100,255,0.08));
+              border: 1px solid rgba(0,200,255,0.4);
+              border-radius: 8px;
+              box-shadow: 0 0 12px rgba(0,200,255,0.2);
+            }
+            .denim-pulse-dot {
+              width: 7px;
+              height: 7px;
+              border-radius: 50%;
+              background: #00ffff;
+              box-shadow: 0 0 8px #00ffff;
+              animation: pulse-dot 1.5s infinite;
+            }
+            .denim-badge-text {
+              font-family: var(--font-display);
+              font-size: 11px;
+              font-weight: 700;
+              letter-spacing: 1px;
+              color: #00ffff;
+              text-shadow: 0 0 8px rgba(0,255,255,0.6);
+            }
 
             .stat-card {
               display: flex;

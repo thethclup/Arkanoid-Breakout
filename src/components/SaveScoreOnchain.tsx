@@ -77,12 +77,16 @@ export function SaveScoreOnchain({ score }: { score: number }) {
           opacity: isPending || isConfirming || isSwitching ? 0.7 : 1,
         }}
       >
-        {!isSupportedChain ? (isSwitching ? 'Ağ Değiştiriliyor...' : 'Base Ağına Geç (Switch Network)') 
+        {!isSupportedChain ? (isSwitching ? 'Ağ Değiştiriliyor...' : 'Base Denim Ağına Geç (Switch Network)') 
           : isPending ? '⏳ Confirm in Wallet…'
-          : isConfirming ? '⛓ Recording on Base…'
-          : isSuccess ? '✅ Score Saved On-Chain!'
-          : '💾 Save Score On-Chain'}
+          : isConfirming ? '⚡ Recording on Base Denim (~200ms)…'
+          : isSuccess ? '✅ Score Saved on Base Denim!'
+          : '💾 Save Score on Base Denim'}
       </button>
+
+      <span style={{ fontSize: '10px', color: '#00ffcc', letterSpacing: '0.5px' }}>
+        ⚡ Base Denim Native 200ms Blocks
+      </span>
 
       {error && (
         <div style={{ fontSize: '11px', color: '#ff4444', textTransform: 'uppercase', fontFamily: "monospace" }}>

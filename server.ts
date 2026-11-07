@@ -335,7 +335,7 @@ async function startServer() {
       name: 'Arkanoid Breakout Orchestrator',
       status: 'active',
       version: '1.0.0',
-      chain: 'Base Network'
+      chain: 'Base Mainnet (Denim 200ms)'
     });
   });
 

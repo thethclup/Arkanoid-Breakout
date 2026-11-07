@@ -159,13 +159,13 @@ export function GMChain() {
         disabled={(exhausted && !needsSwitch) || isPending || isConfirming || isSwitching}
       >
         {needsSwitch 
-          ? (isSwitching ? 'Ağ Değiştiriliyor...' : 'Base Ağına Geç (Switch)')
+          ? (isSwitching ? 'Ağ Değiştiriliyor...' : 'Base Denim Ağına Geç (Switch)')
           : isPending
           ? '⏳ Waiting wallet…'
           : isConfirming
-          ? '⛓ Confirming…'
+          ? '⚡ Denim ~200ms Confirming…'
           : isSuccess && !exhausted
-          ? '✅ GM sent!'
+          ? '✅ GM recorded on Denim!'
           : exhausted && !isSuccess
           ? '🌙 Come back tomorrow'
           : `👋 Send GM (${remaining} left)`}
